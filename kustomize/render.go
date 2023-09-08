@@ -91,8 +91,9 @@ func RenderOverlaysInDirectory(baseDir string, pattern string, outputDir string)
 
 		// If the current file matches the regex, render it
 		if !info.IsDir() && matcher.MatchString(path) {
-			// Remove the kustomization.yaml from the relative path
+			// Remove the kustomization.ya?ml from the relative path
 			path = strings.ReplaceAll(path, "/kustomization.yaml", "")
+			path = strings.ReplaceAll(path, "/kustomization.yml", "")
 
 			// TODO Setup logging with levels
 			// log.Printf("Rendering overlay: %s", path)
