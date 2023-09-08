@@ -11,6 +11,7 @@ import (
 func main() {
 	var overlayAbsPath string
 	var err error
+
 	// Define a string flag to accept the overlay path
 	overlayPath := flag.String("overlay", "", "Path to the Kustomize overlay")
 
@@ -29,7 +30,7 @@ func main() {
 	}
 
 	// Call the RenderSingleOverlay function with the provided overlay path
-	err = kustomize.RenderSingleOverlay(overlayAbsPath)
+	err = kustomize.RenderSingleOverlay(overlayAbsPath, "output.yaml")
 	if err != nil {
 		log.Fatalf("Failed to render overlay: %v", err)
 	}
