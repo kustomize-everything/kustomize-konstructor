@@ -45,6 +45,12 @@ func RenderSingleOverlay(overlayPath string, outputFilename ...string) error {
 }
 
 func writeOutput(m resmap.ResMap, outputFilename string) error {
+	// Create parent directory if it does not exist
+	err := os.MkdirAll(filepath.Dir(outputFilename), os.ModePerm)
+	if err != nil {
+		return err
+	}
+
 	outputFile, err := os.Create(outputFilename)
 	if err != nil {
 		return err
@@ -67,6 +73,7 @@ func writeOutput(m resmap.ResMap, outputFilename string) error {
 func RenderOverlaysInDirectory(baseDir string, pattern string, outputDir string) error {
 	// TODO Setup logging with levels
 	// log.Println("Rendering overlays in directory: " + baseDir)
+	pattern = pattern + "/?kustomization.ya?ml"
 	var matcher = regexp.MustCompile(pattern)
 	err := filepath.Walk(baseDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -74,7 +81,6 @@ func RenderOverlaysInDirectory(baseDir string, pattern string, outputDir string)
 		}
 
 		// Automatically add the variants of kustomization.yaml to the end of the regex
-		pattern = pattern + "/?kustomization.ya?ml"
 		// TODO Setup logging with levels
 		// log.Println("Walking path: " + path)
 		// if matcher.MatchString(path) {
