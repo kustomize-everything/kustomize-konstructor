@@ -2,6 +2,7 @@ package kustomize
 
 import (
 	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -13,7 +14,8 @@ import (
 	"sigs.k8s.io/kustomize/api/types"
 )
 
-func RenderSingleOverlay(overlayPath string, outputFilename ...string) error {
+func RenderSingleOverlay(logger *slog.Logger, overlayPath string, outputFilename ...string) error {
+	logger.Info("Rendering overlay: " + overlayPath)
 	outputPath := "output.yaml" // default output path
 	if len(outputFilename) > 0 && outputFilename[0] != "" {
 		outputPath = outputFilename[0]
@@ -70,9 +72,10 @@ func writeOutput(m resmap.ResMap, outputFilename string) error {
 	return nil
 }
 
-func RenderOverlaysInDirectory(baseDir string, pattern string, outputDir string) error {
-	// TODO Setup logging with levels
-	// log.Println("Rendering overlays in directory: " + baseDir)
+func RenderOverlaysInDirectory(logger *slog.Logger, baseDir string, pattern string, outputDir string) error {
+	logger.Info("Rendering overlays in directory: " + baseDir)
+
+	// Automatically add the variants of kustomization.yaml to the end of the regex
 	pattern = pattern + "/?kustomization.ya?ml"
 	var matcher = regexp.MustCompile(pattern)
 	err := filepath.Walk(baseDir, func(path string, info os.FileInfo, err error) error {
@@ -80,14 +83,12 @@ func RenderOverlaysInDirectory(baseDir string, pattern string, outputDir string)
 			return err
 		}
 
-		// Automatically add the variants of kustomization.yaml to the end of the regex
-		// TODO Setup logging with levels
-		// log.Println("Walking path: " + path)
-		// if matcher.MatchString(path) {
-		// 	log.Println("Found match: " + path)
-		// } else {
-		// 	log.Println("No match: " + path)
-		// }
+		logger.Debug("Walking path: " + path)
+		if matcher.MatchString(path) {
+			logger.Debug("Found match: " + path)
+		} else {
+			logger.Debug("No match: " + path)
+		}
 
 		// If the current file matches the regex, render it
 		if !info.IsDir() && matcher.MatchString(path) {
@@ -111,7 +112,7 @@ func RenderOverlaysInDirectory(baseDir string, pattern string, outputDir string)
 			outputFileName := outputDir + "/" + strings.ReplaceAll(relOverlayPath, "/", "-") + ".yaml"
 
 			// Call the rendering function (modified to accept output file name)
-			err = RenderSingleOverlay(path, outputFileName)
+			err = RenderSingleOverlay(logger, path, outputFileName)
 			if err != nil {
 				return err
 			}

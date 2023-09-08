@@ -2,6 +2,7 @@ package kustomize
 
 import (
 	"io/ioutil"
+	"log/slog"
 	"os"
 	"testing"
 )
@@ -24,7 +25,8 @@ func TestRenderSingleOverlay(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := RenderSingleOverlay(tt.inputPath, "output.yaml")
+			logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
+			err := RenderSingleOverlay(logger, tt.inputPath, "output.yaml")
 			if err != nil {
 				t.Fatalf("failed to render overlay: %v", err)
 			}
@@ -64,7 +66,16 @@ func TestRenderOverlaysInDirectory(t *testing.T) {
 		{
 			name:    "Test Multiple Overlays",
 			baseDir: "../tests/overlays/",
-			pattern: "overlays/.*/kustomization.yaml",
+			pattern: "overlays/.*/",
+			expectedOutputs: map[string]string{
+				"output/napping_octopus.yaml": "../tests/overlays/napping_octopus/expected_output.yaml",
+				"output/snoring_squid.yaml":   "../tests/overlays/snoring_squid/expected_output.yaml",
+			},
+		},
+		{
+			name:    "Test Multiple Overlays without trailing slash in pattern",
+			baseDir: "../tests/overlays/",
+			pattern: "overlays/.*",
 			expectedOutputs: map[string]string{
 				"output/napping_octopus.yaml": "../tests/overlays/napping_octopus/expected_output.yaml",
 				"output/snoring_squid.yaml":   "../tests/overlays/snoring_squid/expected_output.yaml",
@@ -73,7 +84,7 @@ func TestRenderOverlaysInDirectory(t *testing.T) {
 		{
 			name:    "Test Multiple Overlays from tests root",
 			baseDir: "../tests/",
-			pattern: "overlays/.*/kustomization.yaml",
+			pattern: "overlays/.*/",
 			expectedOutputs: map[string]string{
 				"output/overlays-napping_octopus.yaml": "../tests/overlays/napping_octopus/expected_output.yaml",
 				"output/overlays-snoring_squid.yaml":   "../tests/overlays/snoring_squid/expected_output.yaml",
@@ -84,7 +95,8 @@ func TestRenderOverlaysInDirectory(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := RenderOverlaysInDirectory(tt.baseDir, tt.pattern, "output")
+			logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
+			err := RenderOverlaysInDirectory(logger, tt.baseDir, tt.pattern, "output")
 			if err != nil {
 				t.Fatalf("failed to render overlays: %v", err)
 			}
