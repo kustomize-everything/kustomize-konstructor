@@ -1,0 +1,5 @@
+apiVersion: v2
+name: chill-harbor
+description: Where the cool marine life likes to hang out
+type: application
+version: 0.1.0
