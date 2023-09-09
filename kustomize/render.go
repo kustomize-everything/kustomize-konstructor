@@ -14,12 +14,8 @@ import (
 	"sigs.k8s.io/kustomize/api/types"
 )
 
-func RenderSingleOverlay(logger *slog.Logger, overlayPath string, outputFilename ...string) error {
+func RenderSingleOverlay(logger *slog.Logger, baseDir string, overlayPath string, outputPath string) error {
 	logger.Info("Rendering overlay: " + overlayPath)
-	outputPath := "output.yaml" // default output path
-	if len(outputFilename) > 0 && outputFilename[0] != "" {
-		outputPath = outputFilename[0]
-	}
 
 	options := krusty.MakeDefaultOptions()
 	options.PluginConfig = &types.PluginConfig{
@@ -30,14 +26,24 @@ func RenderSingleOverlay(logger *slog.Logger, overlayPath string, outputFilename
 	}
 
 	k := krusty.MakeKustomizer(options)
-
-	m, err := k.Run(filesys.MakeFsOnDisk(), overlayPath)
+  fs := filesys.MakeFsOnDisk()
+	m, err := k.Run(fs, overlayPath)
 	if err != nil {
 		log.Fatalf("Failed to render overlay: %v", err)
 		return err
 	}
 
-	err = writeOutput(m, outputPath)
+	outputOverlayPath := outputPath + "/" + KebabOverlayPath(overlayPath)
+
+	// Create the output directory if it does not exist
+	err = os.MkdirAll(outputOverlayPath, os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	writer := MakeWriter(fs)
+	// err = writeOutput(m, outputPath)
+	err = writer.WriteIndividualFiles(outputOverlayPath, m)
 	if err != nil {
 		log.Fatalf("Failed to write output: %v", err)
 		return err
@@ -108,11 +114,8 @@ func RenderOverlaysInDirectory(logger *slog.Logger, baseDir string, pattern stri
 			// Determine relative path from basedir for output file name
 			relOverlayPath, err := filepath.Rel(baseDir, path)
 
-			// Prepare the output file name based on the relative path
-			outputFileName := outputDir + "/" + strings.ReplaceAll(relOverlayPath, "/", "-") + ".yaml"
-
 			// Call the rendering function (modified to accept output file name)
-			err = RenderSingleOverlay(logger, path, outputFileName)
+			err = RenderSingleOverlay(logger, relOverlayPath, path, outputDir)
 			if err != nil {
 				return err
 			}

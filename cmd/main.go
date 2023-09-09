@@ -6,13 +6,11 @@ import (
 	"kustomize-overlazy/kustomize"
 	"log/slog"
 	"os"
-	"path/filepath"
 	"strings"
 )
 
 func main() {
 	var err error
-	var overlayAbsPath string
 	var logger *slog.Logger
 
 	// Define flags
@@ -20,7 +18,7 @@ func main() {
 	debugFlag := flag.Bool("debug", false, "enable debug logging")
 	outputDir := flag.String("outputDir", "output", "Output directory to write rendered overlays")
 	overlayPath := flag.String("overlay", "", "Path to the Kustomize overlay")
-	pattern := flag.String("pattern", "kustomization.yaml", "Pattern to match kustomization files")
+	pattern := flag.String("pattern", "", "Pattern to match kustomization files")
 
 	// Parse the flags
 	flag.Parse()
@@ -46,14 +44,8 @@ func main() {
 			logger.Error("Please provide a valid overlay path")
 		}
 
-		// Convert the relative path to an absolute path
-		overlayAbsPath, err = filepath.Abs(*overlayPath)
-		if err != nil {
-			logger.Error("Failed to find absolute path: ", err)
-		}
-
 		// Call the RenderSingleOverlay function with the provided overlay path
-		err = kustomize.RenderSingleOverlay(logger, overlayAbsPath, "output.yaml")
+		err = kustomize.RenderSingleOverlay(logger, *baseDir, *overlayPath, *outputDir)
 		if err != nil {
 			logger.Error("Failed to render overlay: ", err)
 		}
